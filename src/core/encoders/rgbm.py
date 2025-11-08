@@ -1,5 +1,5 @@
 import numpy as np
-from transformers.effects import EffectsTransformer
+from core.transformers.effects import EffectsTransformer
 
 
 class RGBMEncoder:
@@ -26,9 +26,9 @@ class RGBMEncoder:
 
         encoded_image = np.concatenate([rgb, alpha_exp], axis=-1)
 
-        output_image = np.clip(encoded_image, 0.0, 1.0)
+        output_image = np.clip(encoded_image, 0.0, 1.0) * 255
 
-        return output_image
+        return output_image.astype(np.uint8)
 
     def from_exr(self, input_img: np.ndarray) -> np.ndarray:
         exr_image = np.clip(input_img, 0.0, None)
