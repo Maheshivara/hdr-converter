@@ -17,7 +17,7 @@ from gui.controllers.image_list import ImageListController
 from gui.widgets.image_list_item import ImageListItem
 from gui.widgets.rgbm_coefficient import RGBMCoefficientWidget
 from gui.widgets.output_image_check import OutputImageCheckWidget
-from gui.widgets.exposure_filter_box import ExposureFilterBox
+from gui.widgets.effect_spin_box import EffectSpinBox
 from gui.workers.conversion import ConversionWorker
 
 
@@ -37,8 +37,15 @@ class HomeScreen(QWidget):
         self.image_list_widget = QListWidget()
         layout.addWidget(self.image_list_widget, 0, 0, 4, 2)
 
-        self.exposure_filter_box = ExposureFilterBox()
+        self.exposure_filter_box = EffectSpinBox(
+            "Enable Exposure Filter", "Exposure:", -100, 100, 1.0, 0.0
+        )
         layout.addWidget(self.exposure_filter_box, 0, 2, 1, 1)
+
+        self.black_level_filter_box = EffectSpinBox(
+            "Enable Black Level Filter", "Black Level:", 0.01, 1.0, 0.01, 0.1
+        )
+        layout.addWidget(self.black_level_filter_box, 1, 2, 1, 1)
 
         self.load_images_button = QPushButton("Load Images")
         self.load_images_button.clicked.connect(self.load_image)
@@ -153,8 +160,25 @@ class HomeScreen(QWidget):
             )
             return
 
+        if self.black_level_filter_box.enabled_checkbox.isChecked() and (
+            self.black_level_filter_box.effect_spinbox.value() <= 0.0
+            or self.black_level_filter_box.effect_spinbox.value() > 1.0
+        ):
+            QMessageBox.critical(
+                self,
+                "Error",
+                "Black level must be in the range (0, 1].",
+            )
+            return
+
+        image_count = len(self.selected_images_controller.selected_images)
+        if (
+            self.output_image_check_widget.png_output_check_box.isChecked()
+            and self.output_image_check_widget.dds_output_check_box.isChecked()
+        ):
+            image_count *= 2
         progress_bar = QProgressBar(self)
-        progress_bar.setMaximum(len(self.selected_images_controller.selected_images))
+        progress_bar.setMaximum(image_count)
         progress_bar.setValue(0)
         self.grid_layout.addWidget(progress_bar, 9, 0, 1, 3)
 
@@ -168,6 +192,7 @@ class HomeScreen(QWidget):
             to_png=to_png,
             to_dds=to_dds,
             exposure=self._get_exposure(),
+            black_level=self._get_black_level(),
         )
         worker.progress.connect(progress_bar.setValue)
         worker.finished.connect(thread.quit)
@@ -206,5 +231,11 @@ class HomeScreen(QWidget):
     def _get_exposure(self) -> Tuple[bool, float]:
         return (
             self.exposure_filter_box.enabled_checkbox.isChecked(),
-            self.exposure_filter_box.exposure_spinbox.value(),
+            self.exposure_filter_box.effect_spinbox.value(),
+        )
+
+    def _get_black_level(self) -> Tuple[bool, float]:
+        return (
+            self.black_level_filter_box.enabled_checkbox.isChecked(),
+            self.black_level_filter_box.effect_spinbox.value(),
         )

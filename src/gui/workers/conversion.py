@@ -8,8 +8,6 @@ from core.writers.image import ImageWriter
 from core.encoders.rgbm import RGBMEncoder
 from core.transformers.effects import EffectsTransformer
 
-from gui.widgets.exposure_filter_box import ExposureFilterBox
-
 
 class ConversionWorker(QObject):
     progress = Signal(int)
@@ -24,6 +22,7 @@ class ConversionWorker(QObject):
         to_png: bool,
         to_dds: bool,
         exposure: Tuple[bool, float],
+        black_level: Tuple[bool, float],
         parent=None,
     ):
         super().__init__(parent)
@@ -33,6 +32,7 @@ class ConversionWorker(QObject):
         self.to_png = to_png
         self.to_dds = to_dds
         self.exposure = exposure
+        self.black_level = black_level
 
         self.reader = ImageReader()
         self.writer = ImageWriter()
@@ -40,25 +40,29 @@ class ConversionWorker(QObject):
         self.encoder = RGBMEncoder(self.rgbm_coefficient)
 
     def run(self):
-        for idx, image_path in enumerate(self.image_paths, start=1):
-            print(f"Processing image: {image_path}")
+        img_count = 0
+        for image_path in self.image_paths:
             try:
                 image = self.reader.read_image(image_path)
                 if image is None:
                     self.error.emit(f"Failed to read image: {image_path}")
                     continue
 
+                exposure_enabled, exposure_value = self.exposure
+                if exposure_enabled:
+                    image = self.transformer.adjust_exposure(image, exposure_value)
+
+                black_level_enabled, black_level_value = self.black_level
+                if black_level_enabled:
+                    image = self.transformer.adjust_black_level(
+                        image, black_level_value
+                    )
+
                 rgbm_image = (
                     self.encoder.from_exr(image)
                     if image_path.lower().endswith(".exr")
                     else self.encoder.from_hdr(image)
                 )
-
-                exposure_enabled, exposure_value = self.exposure
-                if exposure_enabled:
-                    rgbm_image = self.transformer.adjust_exposure(
-                        rgbm_image, exposure_value
-                    )
 
                 base = os.path.splitext(os.path.basename(image_path))[0]
                 if self.to_dds:
@@ -67,6 +71,8 @@ class ConversionWorker(QObject):
                         self.output_directory, output_filename
                     )
                     self.writer.write_as_dds(output_filepath, rgbm_image)
+                    img_count += 1
+                    self.progress.emit(img_count)
 
                 if self.to_png:
                     output_filename = base + "_rgbm.png"
@@ -74,10 +80,10 @@ class ConversionWorker(QObject):
                         self.output_directory, output_filename
                     )
                     self.writer.write_as_png(output_filepath, rgbm_image)
+                    img_count += 1
+                    self.progress.emit(img_count)
 
             except Exception as e:
                 self.error.emit(str(e))
-
-            self.progress.emit(idx)
 
         self.finished.emit()
