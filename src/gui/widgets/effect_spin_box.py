@@ -14,6 +14,8 @@ class EffectSpinBox(QWidget):
     ):
         super().__init__()
 
+        self.default_value = default_value
+
         layout = QVBoxLayout()
         self.setLayout(layout)
 
@@ -36,4 +38,4 @@ class EffectSpinBox(QWidget):
 
     def on_enabled_changed(self, state):
         self.effect_spinbox.setEnabled(Qt.CheckState(state) == Qt.CheckState.Checked)
-        self.effect_spinbox.setValue(0.0)
+        self.effect_spinbox.setValue(self.default_value)
