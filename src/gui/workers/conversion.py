@@ -6,7 +6,16 @@ from typing import Set, Tuple
 from core.readers.image import ImageReader
 from core.writers.image import ImageWriter
 from core.encoders.rgbm import RGBMEncoder
+from core.enums.effect_id import EffectID
 from core.transformers.effects import EffectsTransformer
+
+
+class EffectInfo:
+    def __init__(self, id: EffectID, enabled: bool, value: float):
+
+        self.id = id
+        self.enabled = enabled
+        self.value = value
 
 
 class ConversionWorker(QObject):
@@ -21,8 +30,7 @@ class ConversionWorker(QObject):
         rgbm_coefficient: float,
         to_png: bool,
         to_dds: bool,
-        exposure: Tuple[bool, float],
-        black_level: Tuple[bool, float],
+        effects: Set[EffectInfo],
         parent=None,
     ):
         super().__init__(parent)
@@ -31,8 +39,7 @@ class ConversionWorker(QObject):
         self.rgbm_coefficient = rgbm_coefficient
         self.to_png = to_png
         self.to_dds = to_dds
-        self.exposure = exposure
-        self.black_level = black_level
+        self.effects = effects
 
         self.reader = ImageReader()
         self.writer = ImageWriter()
@@ -48,15 +55,10 @@ class ConversionWorker(QObject):
                     self.error.emit(f"Failed to read image: {image_path}")
                     continue
 
-                exposure_enabled, exposure_value = self.exposure
-                if exposure_enabled:
-                    image = self.transformer.adjust_exposure(image, exposure_value)
-
-                black_level_enabled, black_level_value = self.black_level
-                if black_level_enabled:
-                    image = self.transformer.adjust_black_level(
-                        image, black_level_value
-                    )
+                effects_dict = {
+                    effect.id: (effect.enabled, effect.value) for effect in self.effects
+                }
+                image = self.transformer.apply_effects(image, effects_dict)
 
                 rgbm_image = (
                     self.encoder.from_exr(image)

@@ -1,5 +1,7 @@
 import numpy as np
 
+from core.enums.effect_id import EffectID
+
 
 class EffectsTransformer:
     def apply_gamma_correction(self, image: np.ndarray, gamma: float) -> np.ndarray:
@@ -34,9 +36,30 @@ class EffectsTransformer:
             raise ValueError("Black level must be in the range [0, 1].")
 
         # This mostly matches GIMP behavior
-        if(image < 1.0).any:
-            img = image ** (1.0 / 2.2) # Encode to gamma space (need to check if it's gamma 2.2 or sRGB)
+        if (image < 1.0).any:
+            img = image ** (
+                1.0 / 2.2
+            )  # Encode to gamma space (need to check if it's gamma 2.2 or sRGB)
             adjusted = np.clip(img - black_level, 0.0, None) / (1.0 - black_level)
-            adjusted = adjusted ** 2.2 # Decode back to linear space
-        
-        return adjusted
+            adjusted = adjusted**2.2  # Decode back to linear space
+
+            return adjusted
+        return image
+
+    def apply_effects(
+        self, image: np.ndarray, effects: dict[EffectID, tuple[bool, float]]
+    ) -> np.ndarray:
+        transformed_image = image.copy()
+
+        for effect_id, (enabled, value) in effects.items():
+            if not enabled:
+                continue
+
+            if effect_id == EffectID.EXPOSURE:
+                transformed_image = self.adjust_exposure(transformed_image, value)
+            elif effect_id == EffectID.SATURATION:
+                transformed_image = self.adjust_saturation(transformed_image, value)
+            elif effect_id == EffectID.BLACK_LEVEL:
+                transformed_image = self.adjust_black_level(transformed_image, value)
+
+        return transformed_image

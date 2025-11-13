@@ -9,8 +9,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QListWidget,
+    QSizePolicy,
 )
-from PySide6.QtCore import QThread
+from PySide6.QtCore import QThread, Qt
 
 
 from gui.controllers.image_list import ImageListController
@@ -18,7 +19,11 @@ from gui.widgets.image_list_item import ImageListItem
 from gui.widgets.rgbm_coefficient import RGBMCoefficientWidget
 from gui.widgets.output_image_check import OutputImageCheckWidget
 from gui.widgets.effect_spin_box import EffectSpinBox
-from gui.workers.conversion import ConversionWorker
+from gui.widgets.effects_drag_list import EffectsDragList
+from gui.widgets.output_path_box import OutputPathBox
+from gui.workers.conversion import ConversionWorker, EffectInfo
+
+from core.enums.effect_id import EffectID
 
 
 class HomeScreen(QWidget):
@@ -28,6 +33,12 @@ class HomeScreen(QWidget):
 
         layout = QGridLayout()
         self.grid_layout = layout
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
+        layout.setColumnStretch(2, 1)
+        layout.setColumnStretch(3, 0)
+        layout.setHorizontalSpacing(10)
+        layout.setContentsMargins(8, 8, 8, 8)
         self.setLayout(layout)
 
         self.selected_images_controller = ImageListController(
@@ -35,44 +46,84 @@ class HomeScreen(QWidget):
         )
 
         self.image_list_widget = QListWidget()
-        layout.addWidget(self.image_list_widget, 0, 0, 4, 2)
+        self.image_list_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        layout.addWidget(self.image_list_widget, 0, 0, 4, 3)
 
         self.exposure_filter_box = EffectSpinBox(
-            "Enable Exposure Filter", "Exposure:", -100, 100, 1.0, 0.0
+            EffectID.EXPOSURE,
+            "Enable Exposure Filter",
+            "Exposure:",
+            -100,
+            100,
+            1.0,
+            0.0,
         )
-        layout.addWidget(self.exposure_filter_box, 0, 2, 1, 1)
 
         self.black_level_filter_box = EffectSpinBox(
-            "Enable Black Level Filter", "Black Level:", 0.01, 1.0, 0.01, 0.1
+            EffectID.BLACK_LEVEL,
+            "Enable Black Level Filter",
+            "Black Level:",
+            0.01,
+            1.0,
+            0.01,
+            0.1,
         )
-        layout.addWidget(self.black_level_filter_box, 1, 2, 1, 1)
+
+        self.saturation_filter_box = EffectSpinBox(
+            EffectID.SATURATION,
+            "Enable Saturation Filter",
+            "Saturation:",
+            0.1,
+            5.0,
+            0.1,
+            1.0,
+        )
+        self.effects_drag_list = EffectsDragList(
+            [
+                self.exposure_filter_box,
+                self.black_level_filter_box,
+                self.saturation_filter_box,
+            ]
+        )
+        self.effects_drag_list.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        layout.addWidget(self.effects_drag_list, 0, 3, 4, 1)
 
         self.load_images_button = QPushButton("Load Images")
         self.load_images_button.clicked.connect(self.load_image)
+        self.load_images_button.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         layout.addWidget(self.load_images_button, 4, 0)
 
         self.load_directory_button = QPushButton("Load Directory")
         self.load_directory_button.clicked.connect(self.load_directory)
+        self.load_directory_button.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         layout.addWidget(self.load_directory_button, 4, 1)
 
         self.rgbm_coefficient_widget = RGBMCoefficientWidget()
+        self.rgbm_coefficient_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         layout.addWidget(self.rgbm_coefficient_widget, 5, 0, 1, 3)
 
-        self.output_path_label = QLabel(
-            f"Output Directory: {self.selected_images_controller.output_directory}"
-        )
-        layout.addWidget(self.output_path_label, 6, 0, 1, 2)
-
-        self.output_path_button = QPushButton("Select Output Directory")
-        self.output_path_button.clicked.connect(self.select_output_directory)
-        layout.addWidget(self.output_path_button, 6, 2)
+        self.output_path_box = OutputPathBox(self.selected_images_controller)
+        layout.addWidget(self.output_path_box, 6, 0, 1, 3)
 
         self.output_image_check_widget = OutputImageCheckWidget()
-        layout.addWidget(self.output_image_check_widget, 7, 0, 1, 3)
+        self.output_image_check_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        layout.addWidget(self.output_image_check_widget, 7, 0, 1, 4)
 
         self.to_rgbm_button = QPushButton("Convert to RGBM")
         self.to_rgbm_button.clicked.connect(self.convert_to_rgbm)
-        layout.addWidget(self.to_rgbm_button, 8, 2, 1, 1)
+        layout.addWidget(self.to_rgbm_button, 8, 3, 1, 1)
 
     def load_image(self):
         file_dialog = QFileDialog(self)
@@ -191,8 +242,7 @@ class HomeScreen(QWidget):
             rgbm_coefficient=rgbm_coefficient,
             to_png=to_png,
             to_dds=to_dds,
-            exposure=self._get_exposure(),
-            black_level=self._get_black_level(),
+            effects=self._get_effects(),
         )
         worker.progress.connect(progress_bar.setValue)
         worker.finished.connect(thread.quit)
@@ -210,16 +260,6 @@ class HomeScreen(QWidget):
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         thread.start()
-
-    def select_output_directory(self):
-        directory = QFileDialog.getExistingDirectory(
-            self,
-            "Select Output Directory",
-            self.selected_images_controller.output_directory,
-        )
-        if directory:
-            self.selected_images_controller.set_output_directory(directory)
-            self.output_path_label.setText(f"Output Directory: {directory}")
 
     def on_conversion_finished(self, progress_bar: QProgressBar):
         self.to_rgbm_button.setEnabled(True)
@@ -239,3 +279,21 @@ class HomeScreen(QWidget):
             self.black_level_filter_box.enabled_checkbox.isChecked(),
             self.black_level_filter_box.effect_spinbox.value(),
         )
+
+    def _get_saturation(self) -> Tuple[bool, float]:
+        return (
+            self.saturation_filter_box.enabled_checkbox.isChecked(),
+            self.saturation_filter_box.effect_spinbox.value(),
+        )
+
+    def _get_effects(self):
+        effects = set()
+        for effect_box in self.effects_drag_list.effects:
+            effects.add(
+                EffectInfo(
+                    effect_box.effect_id,
+                    effect_box.enabled_checkbox.isChecked(),
+                    effect_box.effect_spinbox.value(),
+                )
+            )
+        return effects
