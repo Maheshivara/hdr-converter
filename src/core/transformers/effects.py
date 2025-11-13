@@ -1,25 +1,23 @@
 import numpy as np
 
-from typing import Tuple
+from core.enums.effect_id import EffectID
 
 
 class EffectsTransformer:
     def apply_gamma_correction(self, image: np.ndarray, gamma: float) -> np.ndarray:
         if gamma <= 0.0:
             raise ValueError("Gamma must be greater than 0.")
-        img = np.clip(image.astype(np.float32), 0.0, 1.0)
-        return np.power(img, 1.0 / gamma).astype(np.float32)
+        return np.power(image.astype(np.float32), 1.0 / gamma)
 
     def revert_gamma_correction(self, image: np.ndarray, gamma: float) -> np.ndarray:
         if gamma <= 0.0:
             raise ValueError("Gamma must be greater than 0.")
-        img = np.clip(image.astype(np.float32), 0.0, 1.0)
-        reverted = np.power(img, gamma).astype(np.float32)
+        reverted = np.power(image.astype(np.float32), gamma)
         return reverted
 
     def adjust_exposure(self, image: np.ndarray, exposure_value: float) -> np.ndarray:
         factor = 2.0**exposure_value
-        adjusted = np.clip(image * factor, 0.0, 1.0)
+        adjusted = image.astype(np.float32) * factor
         return adjusted
 
     def adjust_saturation(
@@ -34,15 +32,34 @@ class EffectsTransformer:
         return result
 
     def adjust_black_level(self, image: np.ndarray, black_level: float) -> np.ndarray:
-        if black_level <= 0.0 or black_level > 1.0:
-            raise ValueError("Black level must be in the range (0, 1].")
+        if black_level < 0.0 or black_level > 1.0:
+            raise ValueError("Black level must be in the range [0, 1].")
 
-        channels = image.shape[2]
-        bl = np.full((1, 1, channels), black_level, dtype=np.float32)
+        # This mostly matches GIMP behavior
+        if (image < 1.0).any:
+            img = image ** (
+                1.0 / 2.2
+            )  # Encode to gamma space (need to check if it's gamma 2.2 or sRGB)
+            adjusted = np.clip(img - black_level, 0.0, None) / (1.0 - black_level)
+            adjusted = adjusted**2.2  # Decode back to linear space
 
-        channel_max = np.max(image, axis=(0, 1), keepdims=True)
-        denom = np.maximum(channel_max - bl, 1e-6)
+            return adjusted
+        return image
 
-        adjusted = np.clip((image - bl) / denom, 0.0, 1.0)
+    def apply_effects(
+        self, image: np.ndarray, effects: dict[EffectID, tuple[bool, float]]
+    ) -> np.ndarray:
+        transformed_image = image.copy()
 
-        return adjusted
+        for effect_id, (enabled, value) in effects.items():
+            if not enabled:
+                continue
+
+            if effect_id == EffectID.EXPOSURE:
+                transformed_image = self.adjust_exposure(transformed_image, value)
+            elif effect_id == EffectID.SATURATION:
+                transformed_image = self.adjust_saturation(transformed_image, value)
+            elif effect_id == EffectID.BLACK_LEVEL:
+                transformed_image = self.adjust_black_level(transformed_image, value)
+
+        return transformed_image

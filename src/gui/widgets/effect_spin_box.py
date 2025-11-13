@@ -1,10 +1,13 @@
 from PySide6.QtWidgets import QWidget, QCheckBox, QVBoxLayout, QLabel, QDoubleSpinBox
 from PySide6.QtCore import Qt
 
+from core.enums.effect_id import EffectID
+
 
 class EffectSpinBox(QWidget):
     def __init__(
         self,
+        effect_id: EffectID,
         checkbox_label: str,
         spinbox_label: str,
         min_value: float,
@@ -13,6 +16,9 @@ class EffectSpinBox(QWidget):
         default_value: float,
     ):
         super().__init__()
+
+        self.default_value = default_value
+        self.effect_id = effect_id
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -36,4 +42,4 @@ class EffectSpinBox(QWidget):
 
     def on_enabled_changed(self, state):
         self.effect_spinbox.setEnabled(Qt.CheckState(state) == Qt.CheckState.Checked)
-        self.effect_spinbox.setValue(0.0)
+        self.effect_spinbox.setValue(self.default_value)
