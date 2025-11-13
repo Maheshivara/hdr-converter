@@ -32,23 +32,11 @@ class EffectsTransformer:
     def adjust_black_level(self, image: np.ndarray, black_level: float) -> np.ndarray:
         if black_level < 0.0 or black_level > 1.0:
             raise ValueError("Black level must be in the range [0, 1].")
-        img = image.astype(np.float32)
 
-        max_red = np.max(img[:, :, 0])
-        max_green = np.max(img[:, :, 1])
-        max_blue = np.max(img[:, :, 2])
-
-        adjusted = np.zeros_like(img)
-        adjusted[:, :, 0] = np.maximum(
-            (img[:, :, 0] - black_level) / (max_red - black_level), 0
-        )
-        adjusted[:, :, 1] = np.maximum(
-            (img[:, :, 1] - black_level) / (max_green - black_level), 0
-        )
-        adjusted[:, :, 2] = np.maximum(
-            (img[:, :, 2] - black_level) / (max_blue - black_level), 0
-        )
-        if img.shape[2] == 4:
-            adjusted[:, :, 3] = img[:, :, 3]
-
+        # This mostly matches GIMP behavior
+        if(image < 1.0).any:
+            img = image ** (1.0 / 2.2) # Encode to gamma space (need to check if it's gamma 2.2 or sRGB)
+            adjusted = np.clip(img - black_level, 0.0, None) / (1.0 - black_level)
+            adjusted = adjusted ** 2.2 # Decode back to linear space
+        
         return adjusted
