@@ -1,7 +1,7 @@
 [project]
-name = "hdr-conversor"
+name = "hdr-converter"
 version = "0.1.0"
-description = "Add your description here"
+description = "A simple Python tool that converts HDR images (.hdr and .exr) to RGBM format using OpenCV and OpenEXR"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
