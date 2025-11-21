@@ -3,6 +3,7 @@ from typing import Set
 import numpy as np
 from PySide6.QtCore import Signal
 
+from core.readers.image import ImageReader
 from gui.workers.conversion import ConversionWorker, EffectInfo
 
 
@@ -27,6 +28,25 @@ class PreviewWorker(ConversionWorker):
             parent=parent,
         )
         self._image_path = image_path
+        self.reader = ImageReader()
+
+    def _process_single_image(self, image_path: str):
+        """Versão de preview: lê imagem redimensionada antes de aplicar efeitos/encoder."""
+        image = self.reader.read_preview(image_path)
+        if image is None:
+            raise RuntimeError(f"Failed to read image: {image_path}")
+
+        effects_dict = {
+            effect.id: (effect.enabled, effect.value) for effect in self.effects
+        }
+        image = self.transformer.apply_effects(image, effects_dict)
+
+        rgbm_image = (
+            self.encoder.from_exr(image)
+            if image_path.lower().endswith(".exr")
+            else self.encoder.from_hdr(image)
+        )
+        return rgbm_image
 
     def run(self) -> None:
         try:
