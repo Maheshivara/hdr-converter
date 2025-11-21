@@ -16,12 +16,14 @@ from PySide6.QtCore import QThread, Qt
 
 from gui.controllers.image_list import ImageListController
 from gui.widgets.image_list_item import ImageListItem
+from gui.widgets.preview_dialog import PreviewDialog
 from gui.widgets.rgbm_coefficient import RGBMCoefficientWidget
 from gui.widgets.output_image_check import OutputImageCheckWidget
 from gui.widgets.effect_spin_box import EffectSpinBox
 from gui.widgets.effects_drag_list import EffectsDragList
 from gui.widgets.output_path_box import OutputPathBox
 from gui.workers.conversion import ConversionWorker, EffectInfo
+from gui.workers.preview import PreviewWorker, EffectInfo as PreviewEffectInfo
 
 from core.enums.effect_id import EffectID
 
@@ -172,7 +174,11 @@ class HomeScreen(QWidget):
     def update_image_list(self):
         self.image_list_widget.clear()
         for image_path in self.selected_images_controller.selected_images:
-            item = ImageListItem(image_path, self.selected_images_controller)
+            item = ImageListItem(
+                image_path,
+                self.selected_images_controller,
+                preview_callback=self.preview_image,
+            )
             self.image_list_widget.addItem(item)
             self.image_list_widget.setItemWidget(item, item.widget)
 
@@ -297,3 +303,71 @@ class HomeScreen(QWidget):
                 )
             )
         return effects
+
+    def preview_image(self, image_path: str):
+        """Processa a imagem selecionada e mostra um preview RGBM sem salvar."""
+        rgbm_coefficient = (
+            self.rgbm_coefficient_widget.rgbm_coefficient_input_box.value()
+        )
+
+        if rgbm_coefficient <= 0:
+            QMessageBox.critical(
+                self,
+                "Error",
+                "RGBM Coefficient must be greater than zero.",
+            )
+            return
+
+        if self.black_level_filter_box.enabled_checkbox.isChecked() and (
+            self.black_level_filter_box.effect_spinbox.value() <= 0.0
+            or self.black_level_filter_box.effect_spinbox.value() > 1.0
+        ):
+            QMessageBox.critical(
+                self,
+                "Error",
+                "Black level must be in the range (0, 1].",
+            )
+            return
+
+        effects = set()
+        for effect_box in self.effects_drag_list.effects:
+            effects.add(
+                PreviewEffectInfo(
+                    effect_box.effect_id,
+                    effect_box.enabled_checkbox.isChecked(),
+                    effect_box.effect_spinbox.value(),
+                )
+            )
+
+        thread = QThread(self)
+        worker = PreviewWorker(
+            image_path=image_path,
+            rgbm_coefficient=rgbm_coefficient,
+            effects=effects,
+        )
+
+        # guardar o caminho atual para uso no slot de preview
+        self._last_preview_image_path = image_path
+
+        worker.finished.connect(
+            self._on_preview_finished,
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        worker.error.connect(lambda msg: QMessageBox.critical(self, "Error", msg))
+
+        # manter referências para evitar coleta de lixo enquanto a thread roda
+        self._preview_worker = worker
+        self._preview_thread = thread
+
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        thread.start()
+
+    def _on_preview_finished(self, rgbm_image):
+        """Slot chamado quando o PreviewWorker termina o processamento."""
+        image_path = getattr(self, "_last_preview_image_path", "")
+        dialog = PreviewDialog(image_path, rgbm_image, self)
+        dialog.exec()

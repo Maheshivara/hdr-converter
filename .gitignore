@@ -12,3 +12,6 @@ wheels/
 # Input/output files
 input/
 output/
+
+# uv
+uv.lock
