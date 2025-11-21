@@ -30,3 +30,21 @@ The group of contributors:
     ```sh
     uv run src/main.py
     ```
+## How to Build
+
+> [!IMPORTANT]  
+> The build system for this project uses the [PyInstaller](https://pyinstaller.org/en/stable/index.html) tool. For a successful build, you need to sync the project first using the `uv sync` command.
+
+1. Run the PyInstaller command with the `.spec` file available in this repository:
+    ```sh
+    uv run pyinstaller main.spec
+    ```
+
+2. The bundled file will be located in the `dist` directory (in the root directory):
+    1. For Linux, the binary will be named `main`.
+        1. Remember to give execute permissions before running it with:
+            ```sh
+            chmod +x ./main
+            ```
+    2. For Windows, the file will be named `main.exe`.
+    3. We do not have a Mac to build, but the name should be `main`, as on Linux

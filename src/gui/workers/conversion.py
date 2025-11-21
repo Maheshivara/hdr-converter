@@ -12,7 +12,6 @@ from core.transformers.effects import EffectsTransformer
 
 class EffectInfo:
     def __init__(self, id: EffectID, enabled: bool, value: float):
-
         self.id = id
         self.enabled = enabled
         self.value = value
