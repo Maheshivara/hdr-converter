@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import List
 from PySide6.QtWidgets import (
     QWidget,
     QGridLayout,
@@ -21,10 +21,11 @@ from gui.widgets.output_image_check import OutputImageCheckWidget
 from gui.widgets.effect_spin_box import EffectSpinBox
 from gui.widgets.effects_drag_list import EffectsDragList
 from gui.widgets.output_path_box import OutputPathBox
-from gui.workers.conversion import ConversionWorker, EffectInfo
-from gui.workers.preview import PreviewWorker, EffectInfo as PreviewEffectInfo
+from gui.workers.conversion import ConversionWorker
+from gui.workers.preview import PreviewWorker
 
 from core.enums.effect_id import EffectID
+from core.transformers.effects import EffectInfo
 
 
 class HomeScreen(QWidget):
@@ -273,34 +274,10 @@ class HomeScreen(QWidget):
         self.image_list_widget.clear()
         self.selected_images_controller.selected_images.clear()
 
-    def _get_exposure(self) -> Tuple[bool, float]:
-        return (
-            self.exposure_filter_box.enabled_checkbox.isChecked(),
-            self.exposure_filter_box.effect_spinbox.value(),
-        )
-
-    def _get_black_level(self) -> Tuple[bool, float]:
-        return (
-            self.black_level_filter_box.enabled_checkbox.isChecked(),
-            self.black_level_filter_box.effect_spinbox.value(),
-        )
-
-    def _get_saturation(self) -> Tuple[bool, float]:
-        return (
-            self.saturation_filter_box.enabled_checkbox.isChecked(),
-            self.saturation_filter_box.effect_spinbox.value(),
-        )
-
-    def _get_effects(self):
-        effects = set()
-        for effect_box in self.effects_drag_list.effects:
-            effects.add(
-                EffectInfo(
-                    effect_box.effect_id,
-                    effect_box.enabled_checkbox.isChecked(),
-                    effect_box.effect_spinbox.value(),
-                )
-            )
+    def _get_effects(self) -> List[EffectInfo]:
+        effects = []
+        for e in self.effects_drag_list.effects_items:
+            effects.append(e.get_effect_info())
         return effects
 
     def preview_image(self, image_path: str):
@@ -328,21 +305,11 @@ class HomeScreen(QWidget):
             )
             return
 
-        effects = set()
-        for effect_box in self.effects_drag_list.effects:
-            effects.add(
-                PreviewEffectInfo(
-                    effect_box.effect_id,
-                    effect_box.enabled_checkbox.isChecked(),
-                    effect_box.effect_spinbox.value(),
-                )
-            )
-
         thread = QThread(self)
         worker = PreviewWorker(
             image_path=image_path,
             rgbm_coefficient=rgbm_coefficient,
-            effects=effects,
+            effects=self._get_effects(),
         )
 
         # guardar o caminho atual para uso no slot de preview

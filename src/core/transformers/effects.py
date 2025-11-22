@@ -1,6 +1,13 @@
 import numpy as np
-
+from typing import List
 from core.enums.effect_id import EffectID
+
+
+class EffectInfo:
+    def __init__(self, effect_id: EffectID, enabled: bool, value: float) -> None:
+        self.effect_id = effect_id
+        self.enabled = enabled
+        self.value = value
 
 
 class EffectsTransformer:
@@ -46,20 +53,24 @@ class EffectsTransformer:
             return adjusted
         return image
 
-    def apply_effects(
-        self, image: np.ndarray, effects: dict[EffectID, tuple[bool, float]]
-    ) -> np.ndarray:
+    def apply_effects(self, image: np.ndarray, effects: List[EffectInfo]) -> np.ndarray:
         transformed_image = image.copy()
 
-        for effect_id, (enabled, value) in effects.items():
-            if not enabled:
+        for effect in effects:
+            if not effect.enabled:
                 continue
 
-            if effect_id == EffectID.EXPOSURE:
-                transformed_image = self.adjust_exposure(transformed_image, value)
-            elif effect_id == EffectID.SATURATION:
-                transformed_image = self.adjust_saturation(transformed_image, value)
-            elif effect_id == EffectID.BLACK_LEVEL:
-                transformed_image = self.adjust_black_level(transformed_image, value)
+            elif effect.effect_id == EffectID.EXPOSURE:
+                transformed_image = self.adjust_exposure(
+                    transformed_image, effect.value
+                )
+            elif effect.effect_id == EffectID.SATURATION:
+                transformed_image = self.adjust_saturation(
+                    transformed_image, effect.value
+                )
+            elif effect.effect_id == EffectID.BLACK_LEVEL:
+                transformed_image = self.adjust_black_level(
+                    transformed_image, effect.value
+                )
 
         return transformed_image

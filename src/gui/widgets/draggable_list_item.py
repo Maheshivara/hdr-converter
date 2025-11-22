@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtSvgWidgets import QSvgWidget
 
-from gui.widgets.effect_spin_box import EffectSpinBox
+from gui.widgets.effect_spin_box import EffectSpinBox, EffectInfo
 
 
 class DraggableListItem(QWidget):
@@ -33,3 +33,6 @@ class DraggableListItem(QWidget):
 
     def dropEvent(self, event: QDropEvent):
         event.accept()
+
+    def get_effect_info(self) -> EffectInfo:
+        return self.effect_box.get_effect_info()

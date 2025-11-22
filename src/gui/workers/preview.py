@@ -1,10 +1,11 @@
-from typing import Set
+from typing import List
 
 import numpy as np
 from PySide6.QtCore import Signal
 
 from core.readers.image import ImageReader
-from gui.workers.conversion import ConversionWorker, EffectInfo
+from core.transformers.effects import EffectInfo
+from gui.workers.conversion import ConversionWorker
 
 
 class PreviewWorker(ConversionWorker):
@@ -15,7 +16,7 @@ class PreviewWorker(ConversionWorker):
         self,
         image_path: str,
         rgbm_coefficient: float,
-        effects: Set[EffectInfo],
+        effects: List[EffectInfo],
         parent=None,
     ) -> None:
         super().__init__(
@@ -36,10 +37,7 @@ class PreviewWorker(ConversionWorker):
         if image is None:
             raise RuntimeError(f"Failed to read image: {image_path}")
 
-        effects_dict = {
-            effect.id: (effect.enabled, effect.value) for effect in self.effects
-        }
-        image = self.transformer.apply_effects(image, effects_dict)
+        image = self.transformer.apply_effects(image, self.effects)
         return image
 
     def run(self) -> None:
