@@ -1,10 +1,10 @@
-import sys
-
-from os import path
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtSvgWidgets import QSvgWidget
 
+from os import path
+
+from core.constants import Paths
 from gui.widgets.effect_spin_box import EffectSpinBox, EffectInfo
 
 
@@ -15,13 +15,7 @@ class DraggableListItem(QWidget):
         layout = QHBoxLayout()
         layout.addWidget(self.effect_box)
 
-        if getattr(sys, "frozen", False):
-            base_dir = getattr(
-                sys, "_MEIPASS", path.join(path.dirname(__file__), "..", "..", "..")
-            )
-        else:
-            base_dir = path.join(path.dirname(__file__), "..", "..", "..")
-        svg_path = path.join(base_dir, "assets", "drag_handle.svg")
+        svg_path = path.join(Paths.ICONS_DIR, "drag_handle.svg")
         drag_handle = QSvgWidget(svg_path)
         drag_handle.setFixedSize(24, 24)
         layout.addWidget(drag_handle)

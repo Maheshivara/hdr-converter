@@ -3,7 +3,7 @@ from typing import Optional
 from PIL import Image
 import cv2 as cv
 import numpy as np
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QStandardPaths
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
 )
 
+from core.constants import Paths
 from core.transformers.lut import LutTransformer
 
 
@@ -96,7 +97,7 @@ class PreviewDialog(QDialog):
         Caso a LUT não seja encontrada, mostra a imagem base sem LUT.
         """
 
-        lut_path = os.path.join("assets", "AgX.png")
+        lut_path = os.path.join(Paths.LUTS_DIR, "AgX.png")
         if not os.path.exists(lut_path):
             self._set_image(self._base_image)
             return
@@ -124,7 +125,9 @@ class PreviewDialog(QDialog):
     def _on_load_lut_clicked(self) -> None:
         """Permite ao usuário escolher uma nova imagem de LUT e reaplicar."""
 
-        start_dir = os.path.join(os.getcwd(), "assets")
+        start_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        )
         filename, _ = QFileDialog.getOpenFileName(
             self,
             "Selecionar LUT",
