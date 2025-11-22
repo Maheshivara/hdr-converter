@@ -1,7 +1,7 @@
 import os
 
 from PySide6.QtCore import QObject, Signal
-from typing import Set, Tuple
+from typing import Set
 
 from core.readers.image import ImageReader
 from core.writers.image import ImageWriter

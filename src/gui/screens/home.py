@@ -2,7 +2,6 @@ import os
 from typing import Tuple
 from PySide6.QtWidgets import (
     QWidget,
-    QLabel,
     QGridLayout,
     QPushButton,
     QFileDialog,
@@ -144,7 +143,7 @@ class HomeScreen(QWidget):
                     QMessageBox.critical(
                         self,
                         "Error",
-                        f"Failed to select images.",
+                        "Failed to select images.",
                     )
 
     def load_directory(self):
@@ -168,7 +167,7 @@ class HomeScreen(QWidget):
                 QMessageBox.critical(
                     self,
                     "Error",
-                    f"No supported images found in the selected directory.",
+                    "No supported images found in the selected directory.",
                 )
 
     def update_image_list(self):
