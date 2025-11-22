@@ -11,6 +11,7 @@ class LutTransformer:
 
     def apply(self, image: np.ndarray) -> np.ndarray:
         if image.dtype == np.float32 or image.dtype == np.float64:
+            image = np.clip(image, 0.0, None)
             img = self._compress_hdr(image)
         else:
             img = image.astype(np.float32) / 255.0
@@ -72,6 +73,7 @@ class LutTransformer:
 
     def _remap(self, image: np.ndarray) -> np.ndarray:
         remapped = image * (self.lut_size - 1)
+        remapped = np.clip(remapped, 0, self.lut_size - 1)
         return remapped
 
     def _linear_interpolate(

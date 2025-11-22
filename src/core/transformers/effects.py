@@ -24,7 +24,7 @@ class EffectsTransformer:
         return reverted
 
     def adjust_exposure(self, image: np.ndarray, exposure_value: float) -> np.ndarray:
-        factor = 2.0**exposure_value
+        factor = np.power(2.0, exposure_value)
         adjusted = image.astype(np.float32) * factor
         return adjusted
 
@@ -45,11 +45,11 @@ class EffectsTransformer:
 
         # This mostly matches GIMP behavior
         if (image < 1.0).any:
-            img = image ** (
-                1.0 / 2.2
+            img = np.pow(
+                image, (1.0 / 2.2)
             )  # Encode to gamma space (need to check if it's gamma 2.2 or sRGB)
             adjusted = np.clip(img - black_level, 0.0, None) / (1.0 - black_level)
-            adjusted = adjusted**2.2  # Decode back to linear space
+            adjusted = np.power(adjusted, 2.2)  # Decode back to linear space
 
             return adjusted
 
