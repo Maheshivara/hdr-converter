@@ -13,3 +13,5 @@ class Paths:
     ASSETS_DIR = path.join(ROOT_DIR, "assets")
     ICONS_DIR = path.join(ASSETS_DIR, "icons")
     LUTS_DIR = path.join(ASSETS_DIR, "LUTs")
+    FONTS_DIR = path.join(ASSETS_DIR, "fonts")
+    PALETTES_DIR = path.join(ASSETS_DIR, "palettes")

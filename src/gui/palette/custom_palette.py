@@ -2,11 +2,12 @@ from PySide6.QtGui import QPalette
 from os import path
 import json
 
-PALETTE_INFO_PATH = path.join(path.dirname(path.abspath(__file__)), "info.json")
+from core.constants import Paths
 
 
-def create_custom_palette() -> QPalette:
-    with open(PALETTE_INFO_PATH, "r") as f:
+def get_custom_palette() -> QPalette:
+    default_palette_path = path.join(Paths.PALETTES_DIR, "default.json")
+    with open(default_palette_path, "r") as f:
         palette_data = json.load(f)["palette"]
 
     palette = QPalette()
