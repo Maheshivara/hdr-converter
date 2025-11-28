@@ -5,7 +5,7 @@ from core.constants import Paths
 
 
 def load_font() -> QFont:
-    default_font_path = path.join(Paths.FONTS_DIR, "OpenSans-Regular.ttf")
+    default_font_path = path.join(Paths.FONTS_DIR, "Flexi_IBM_VGA_True.ttf")
     font_id = QFontDatabase.addApplicationFont(default_font_path)
     font_families = QFontDatabase.applicationFontFamilies(font_id)
     if font_families:
