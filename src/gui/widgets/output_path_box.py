@@ -18,15 +18,18 @@ class OutputPathBox(QWidget):
         layout = QHBoxLayout()
         self.setLayout(layout)
 
-        self.output_path_label = QLabel(
-            f"Output Directory: {image_controller.output_directory}"
-        )
+        self.output_path_label = QLabel(image_controller.output_directory)
+        self.output_path_info_label = QLabel("Output Directory:")
+        font = self.output_path_info_label.font()
+        font.setBold(True)
+        self.output_path_info_label.setFont(font)
         self.output_path_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.output_path_label.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
+        layout.addWidget(self.output_path_info_label)
         layout.addWidget(self.output_path_label)
 
         self.browse_button = QPushButton("Change...")
@@ -45,4 +48,4 @@ class OutputPathBox(QWidget):
         )
         if directory:
             self.image_controller.set_output_directory(directory)
-            self.output_path_label.setText(f"Output Directory: {directory}")
+            self.output_path_label.setText(directory)

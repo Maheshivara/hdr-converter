@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QMessageBox,
 )
 
 from gui.controllers.image_list import ImageListController
@@ -41,7 +42,12 @@ class ImageListItem(QListWidgetItem):
 
     def preview_image(self):
         if self.preview_callback is not None:
-            self.preview_callback(self.image_path)
+            try:
+                self.preview_callback(self.image_path)
+            except Exception as e:
+                QMessageBox.critical(
+                    self.widget, "Error", f"Error previewing image: {e}"
+                )
 
     def delete_image(self):
         self.image_list_controller.remove_image(self.image_path)

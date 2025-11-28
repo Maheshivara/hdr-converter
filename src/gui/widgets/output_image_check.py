@@ -8,6 +8,9 @@ class OutputImageCheckWidget(QWidget):
         layout = QHBoxLayout()
         self.setLayout(layout)
         self.image_format_label = QLabel("Output Image Format:")
+        font = self.image_format_label.font()
+        font.setBold(True)
+        self.image_format_label.setFont(font)
         self.image_format_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )

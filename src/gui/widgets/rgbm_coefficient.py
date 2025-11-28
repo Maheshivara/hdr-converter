@@ -13,6 +13,9 @@ class RGBMCoefficientWidget(QWidget):
         self.setLayout(layout)
 
         self.rgbm_coefficient_label = QLabel("RGBM Coefficient:")
+        font = self.rgbm_coefficient_label.font()
+        font.setBold(True)
+        self.rgbm_coefficient_label.setFont(font)
         layout.addWidget(self.rgbm_coefficient_label)
 
         self.rgbm_coefficient_input_box = QDoubleSpinBox()

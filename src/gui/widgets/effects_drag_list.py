@@ -1,4 +1,5 @@
 from typing import List
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QAbstractItemView
 
 from gui.widgets.effect_spin_box import EffectSpinBox
@@ -10,6 +11,7 @@ class EffectsDragList(QListWidget):
         super().__init__()
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
+
         self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.effects_items: List[DraggableListItem] = []
@@ -20,7 +22,17 @@ class EffectsDragList(QListWidget):
             self.addItem(list_item)
             self.setItemWidget(list_item, item)
             self.effects_items.append(item)
+        self.clearSelection()
         self.setSizeAdjustPolicy(QListWidget.SizeAdjustPolicy.AdjustToContents)
+        self.setStyleSheet(
+            """
+            QListWidget::item {
+                border: 1px solid #a9b1d6;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            """
+        )
 
     def dropEvent(self, event):
         super().dropEvent(event)
@@ -33,3 +45,8 @@ class EffectsDragList(QListWidget):
             if widget is not None:
                 new_effects.append(widget)
         self.effects_items = new_effects
+
+    def mouseReleaseEvent(self, e: QMouseEvent) -> None:
+        self.selectionModel().clearSelection()
+        self.setCurrentRow(-1)
+        return super().mouseReleaseEvent(e)
