@@ -1,4 +1,5 @@
 import os
+import time
 
 from PySide6.QtCore import QObject, Signal
 from typing import List, Set
@@ -69,7 +70,8 @@ class ConversionWorker(QObject):
                     self.progress.emit(img_count)
 
                 if self.to_png:
-                    output_filename = base + "_rgbm.png"
+                    timestamp = time.strftime("%d%m%Y_%H%M%S")
+                    output_filename = base + "_rgbm_" + timestamp + ".png"
                     output_filepath = os.path.join(
                         self.output_directory, output_filename
                     )
