@@ -56,12 +56,13 @@ class ConversionWorker(QObject):
     def run(self):
         img_count = 0
         for image_path in self.image_paths:
+            timestamp = time.strftime("%d%m%Y_%H%M%S")
             try:
                 rgbm_image = self._process_single_image(image_path)
 
                 base = os.path.splitext(os.path.basename(image_path))[0]
                 if self.to_dds:
-                    output_filename = base + "_rgbm.dds"
+                    output_filename = base + "_rgbm_" + timestamp + ".dds"
                     output_filepath = os.path.join(
                         self.output_directory, output_filename
                     )
@@ -70,7 +71,6 @@ class ConversionWorker(QObject):
                     self.progress.emit(img_count)
 
                 if self.to_png:
-                    timestamp = time.strftime("%d%m%Y_%H%M%S")
                     output_filename = base + "_rgbm_" + timestamp + ".png"
                     output_filepath = os.path.join(
                         self.output_directory, output_filename
