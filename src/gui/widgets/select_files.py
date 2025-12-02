@@ -35,6 +35,7 @@ class SelectFilesWidget(QWidget):
 
     def _load_images(self):
         file_dialog = QFileDialog(self)
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
         file_dialog.setNameFilter("HDR Images (*.exr *.hdr)")
         if file_dialog.exec():
             selected_files = file_dialog.selectedFiles()

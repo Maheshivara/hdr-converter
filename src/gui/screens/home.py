@@ -31,7 +31,7 @@ from core.transformers.effects import EffectInfo
 class HomeScreen(QWidget):
     def __init__(self):
         super().__init__()
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 900, 700)
 
         layout = QGridLayout()
         self.grid_layout = layout
