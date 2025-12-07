@@ -1,6 +1,7 @@
 import os
 from typing import Optional
 from PIL import Image
+os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 import cv2 as cv
 import numpy as np
 from PySide6.QtCore import Qt, QStandardPaths
